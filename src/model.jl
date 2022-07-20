@@ -9,9 +9,9 @@ mutable struct Model{T,TD} <: AbstractSqpModel
     g::TD  # Final constraint values
     g_L::TD # Constraints Lower Bound
     g_U::TD # Constraints Upper Bound
-    j_str::Array{Tuple{Int,Int}}
-    h_str::Array{Tuple{Int,Int}}
-    mult_g::TD # lagrange multipliers on constraints
+    j_str::Array{Tuple{Int,Int}} #? what are these for ; my understand: jacabian non-zero (i,j)
+    h_str::Array{Tuple{Int,Int}} #? my understand: hessian non-zero (i,j)
+    mult_g::TD # lagrange multipliers on constraints #! two-sided constraint with single multiplier 
     mult_x_L::TD # lagrange multipliers on lower bounds
     mult_x_U::TD # lagrange multipliers on upper bounds
     obj_val::T  # Final objective
@@ -22,7 +22,7 @@ mutable struct Model{T,TD} <: AbstractSqpModel
     eval_g::Function
     eval_grad_f::Function
     eval_jac_g::Function
-    eval_h::Union{Function,Nothing}
+    eval_h::Union{Function,Nothing} # a Union type either ::Function or :: Nothing  
 
     num_linear_constraints::Int # number of linear constraints
 
@@ -101,7 +101,7 @@ function add_statistics(model::AbstractSqpModel, name::String, value::T) where T
         return
     end
     if !haskey(model.statistics, name)
-        model.statistics[name] = Array{T,1}()
+        model.statistics[name] = Array{T,1}() #no key then add key 
     end
     push!(model.statistics[name], value)
 end

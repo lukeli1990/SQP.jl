@@ -5,7 +5,7 @@ mutable struct QpJuMP{T,Tv<:AbstractArray{T},Tm<:AbstractMatrix{T}} <: AbstractS
     constr::Vector{JuMP.ConstraintRef}
     rngbdcons::Vector{Int}
     rngcons::Vector{Int}
-    slack_vars::Dict{Int,Vector{JuMP.VariableRef}}
+    slack_vars::Dict{Int,Vector{JuMP.VariableRef}} #slack_varriable for each constraint 
 
     function QpJuMP(model::JuMP.AbstractModel, data::QpData{T,Tv,Tm}) where {T,Tv,Tm}
         qp = new{T,Tv,Tm}()
@@ -36,7 +36,7 @@ The slack variables are not introduced for the linear constraints.
 function create_model!(
     qp::QpJuMP{T,Tv,Tm}, 
     Δ::T,
-) where {T,Tv,Tm}
+    ) where {T,Tv,Tm}
 
     qp.constr = []
     qp.rngbdcons = []
@@ -128,7 +128,7 @@ function sub_optimize!(
     qp::QpJuMP{T,Tv,Tm},
     x_k::Tv,
     Δ::T,
-) where {T,Tv,Tm}
+    ) where {T,Tv,Tm}
 
     # dimension of LP
     m, n = size(qp.data.A)
@@ -150,7 +150,7 @@ function sub_optimize!(
         #         qp.x[j],
         #     )
         # end
-        # @objective(qp.model, qp.data.sense, obj)
+        # @objective(qp.model, qp.data.sense, obj) #quadraic objective 
         @objective(
             qp.model, 
             qp.data.sense, 
@@ -162,7 +162,7 @@ function sub_optimize!(
         )
     end
 
-    # fix slack variables to zeros
+    # fix slack variables to zeros for solving basic-QP
     for (_, slacks) in qp.slack_vars, s in slacks
         if JuMP.has_lower_bound(s)
             JuMP.delete_lower_bound(s)
@@ -182,12 +182,13 @@ function sub_optimize!(
     return Xsol, lambda, mult_x_U, mult_x_L, p_slack, status
 end
 
+#? linear feasibility problem 
 function sub_optimize_lp(
     optimizer,
     A::Tm, cl::Tv, cu::Tv, 
     xl::Tv, xu::Tv, x_k::Tv, 
     m::Int, num_constraints::Int
-) where {T, Tv<:AbstractArray{T}, Tm<:AbstractMatrix{T}}
+    ) where {T, Tv<:AbstractArray{T}, Tm<:AbstractMatrix{T}}
     n = length(x_k)
 
     model = JuMP.Model(optimizer)
@@ -246,7 +247,7 @@ end
 function sub_optimize_lp(
     qp::QpJuMP{T,Tv,Tm},
     x_k::Tv,
-) where {T,Tv,Tm}
+    ) where {T,Tv,Tm}
 
     # problem dimension
     m, n = size(qp.data.A)
@@ -280,12 +281,13 @@ function sub_optimize_lp(
     return Xsol, lambda, mult_x_U, mult_x_L, status
 end
 
+#? what is this QP + FR with weighting 
 function sub_optimize_L1QP!(
     qp::QpJuMP{T,Tv,Tm},
     x_k::Tv,
     Δ::T,
     μ::T,
-) where {T,Tv,Tm}
+    ) where {T,Tv,Tm}
 
     # problem dimension
     m, n = size(qp.data.A)
@@ -353,7 +355,7 @@ function sub_optimize_FR!(
     qp::QpJuMP{T,Tv,Tm},
     x_k::Tv,
     Δ::T,
-) where {T,Tv,Tm}
+    ) where {T,Tv,Tm}
 
     # dimension of LP
     m, n = size(qp.data.A)
@@ -399,7 +401,7 @@ function sub_optimize_infeas(
     qp::QpJuMP{T,Tv,Tm},
     x_k::Tv,
     Δ::T,
-) where {T,Tv,Tm}
+    ) where {T,Tv,Tm}
 
     # modify objective function
     @objective(qp.model, Min, sum(s for (_, slacks) in qp.slack_vars, s in slacks))
@@ -434,7 +436,7 @@ function set_trust_region!(
     v_lb::Tv,
     v_ub::Tv,
     Δ::T
-) where {T,Tv}
+    ) where {T,Tv}
     for i in eachindex(x)
         set_lower_bound(x[i], max(-Δ, v_lb[i]))
         set_upper_bound(x[i], min(+Δ, v_ub[i]))
@@ -445,14 +447,14 @@ function set_trust_region!(
     qp::QpJuMP{T,Tv,Tm},
     x_k::Tv,
     Δ::T
-) where {T,Tv,Tm} 
+    ) where {T,Tv,Tm} 
     return set_trust_region!(qp.x, qp.data.v_lb - x_k, qp.data.v_ub - x_k, Δ)
 end
 
 function set_trust_region!(
     qp::QpJuMP{T,Tv,Tm},
     Δ::T
-) where {T,Tv,Tm} 
+    ) where {T,Tv,Tm} 
     return set_trust_region!(qp.x, qp.data.v_lb, qp.data.v_ub, Δ)
 end
 

@@ -19,7 +19,7 @@ function KT_residuals(
     for i = 1:size(Jac,1)
         scalar = max(scalar, abs(lambda[i]) * norm(Jac[i,:]))
     end
-    return KT_res / scalar
+    return KT_res / scalar #scale down the KT value with scalar 
 end
 
 """
@@ -39,11 +39,11 @@ function norm_complementarity(
         if g_L[i] == g_U[i]
             compl[i] = 0.0
         else
-            compl[i] = min(E[i] - g_L[i], g_U[i] - E[i]) * lambda[i]
+            compl[i] = min(E[i] - g_L[i], g_U[i] - E[i]) * lambda[i] # E evaluation of constraint with current solution 
             denom += lambda[i]^2
         end
     end
-    return norm(compl, p) / (1 + sqrt(denom))
+    return norm(compl, p) / (1 + sqrt(denom)) #normalized complementeraity slackness error
 end
 
 """
@@ -73,5 +73,5 @@ function norm_violations(
             viol[m+j] = x_L[j] - x[j]
         end
     end
-    return norm(viol, p)
+    return norm(viol, p) #evaluation of primal feasibility, p for customized norm setting  
 end

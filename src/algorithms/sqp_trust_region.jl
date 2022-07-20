@@ -4,7 +4,7 @@
 abstract type AbstractSqpTrOptimizer <: AbstractSqpOptimizer end
 
 mutable struct SqpTR{T,TD,TI} <: AbstractSqpTrOptimizer
-    @sqp_fields
+    @sqp_fields #inherit from sqp_fields
 
     # directions for multipliers
     p_lambda::TD
@@ -15,9 +15,9 @@ mutable struct SqpTR{T,TD,TI} <: AbstractSqpTrOptimizer
     soc::TD # second-order correction direction
 
     phi::T # merit function value
-    μ::T # penalty parameter
+    μ::T # penalty parameter #! scalar used in merit 
 
-    Δ::T # current trust region size
+    Δ::T # current trust region size #! scalar 
     Δ_min::T # minimum trust region size allowed
     Δ_max::T # maximum trust region size allowed
 
@@ -130,8 +130,8 @@ function run!(sqp::AbstractSqpTrOptimizer)
         sqp.start_iter_time = time()
 
         # evaluate function, constraints, gradient, Jacobian
-        if sqp.step_acceptance
-            eval_functions!(sqp)
+        if sqp.step_acceptance  #if step was accepted in last iter 
+            eval_functions!(sqp) #find hessian jacabian 
             sqp.prim_infeas = norm_violations(sqp, 1)
             sqp.dual_infeas = KT_residuals(sqp)
             sqp.compl = norm_complementarity(sqp)
@@ -144,32 +144,32 @@ function run!(sqp::AbstractSqpTrOptimizer)
         if sqp.sub_status ∈ [MOI.OPTIMAL, MOI.ALMOST_OPTIMAL, MOI.ALMOST_LOCALLY_SOLVED, MOI.LOCALLY_SOLVED]
             # do nothing
         elseif sqp.sub_status ∈ [MOI.INFEASIBLE, MOI.LOCALLY_INFEASIBLE, MOI.DUAL_INFEASIBLE, MOI.NORM_LIMIT, MOI.OBJECTIVE_LIMIT]
-            if sqp.feasibility_restoration == true
+            if sqp.feasibility_restoration == true #running feasibility restoration but infeasible 
                 @info "Failed to find a feasible direction"
                 if sqp.prim_infeas <= sqp.options.tol_infeas
-                    sqp.ret = 6
+                    sqp.ret = 6 #output a feasible point
                 else
-                    sqp.ret = 2
+                    sqp.ret = 2 #local infeasibility detected 
                 end
                 break
             else
                 @info "Feasibility restoration starts... (status: $(sqp.sub_status))"
                 # println("Feasibility restoration ($(sqp.sub_status), |p| = $(norm(sqp.p, Inf))) begins.")
-                sqp.feasibility_restoration = true
+                sqp.feasibility_restoration = true #jump to next iter and run feasibility restoration 
                 print(sqp)
                 collect_statistics(sqp)
                 sqp.iter += 1
                 continue
             end
         else
-            sqp.ret == -3
+            sqp.ret == -3 #error in computation 
             if sqp.prim_infeas <= sqp.options.tol_infeas
-                sqp.ret = 6
+                sqp.ret = 6 #error but still we found a feasible point 
             end
             break
         end
 
-        if sqp.step_acceptance
+        if sqp.step_acceptance #if step was accepted in last iter 
             sqp.phi = compute_phi(sqp, sqp.x, 0.0, sqp.p)
         end
 
@@ -200,10 +200,10 @@ function run!(sqp::AbstractSqpTrOptimizer)
             end
         end
 
-        do_step!(sqp)
+        do_step!(sqp) #accept, reject step, adjust trust region, second order correction. 
 
         # NOTE: This is based on the algorithm of filterSQP.
-        if sqp.feasibility_restoration && sqp.step_acceptance
+        if sqp.feasibility_restoration && sqp.step_acceptance #running feasibility restoration but accept step 
             sqp.feasibility_restoration = false
         end
 
@@ -266,7 +266,7 @@ function sub_optimize_lp!(sqp::AbstractSqpTrOptimizer)
             sqp.problem.x_L, sqp.problem.x_U, sqp.x,
             sqp.problem.num_linear_constraints, sqp.problem.m
         )
-    else
+    else #? never run? 
         fill!(sqp.E, 0.0)
         
         sqp.optimizer =
@@ -356,7 +356,7 @@ end
 """
     compute_step!
 
-Compute the step direction with respect to priaml and dual variables by solving QP subproblem and also updates the penalty parameter μ.
+Compute the step direction with respect to primal and dual variables by solving QP subproblem and also updates the penalty parameter μ.
 
 # Arguments
 - `sqp`: SQP model struct
@@ -366,10 +366,11 @@ function compute_step!(sqp::AbstractSqpTrOptimizer)
     @info "solve QP subproblem..."
     sqp.p, lambda, mult_x_U, mult_x_L, sqp.p_slack, sqp.sub_status = sub_optimize!(sqp)
 
+    #compute changes on multipliers 
     sqp.p_lambda = lambda - sqp.lambda
     sqp.p_mult_x_L = mult_x_L - sqp.mult_x_L
     sqp.p_mult_x_U = mult_x_U - sqp.mult_x_U
-    sqp.μ = max(sqp.μ, norm(sqp.lambda, Inf))
+    sqp.μ = max(sqp.μ, norm(sqp.lambda, Inf)) #?update penalty from the multiplier 
     @info "...found a direction"
 end
 

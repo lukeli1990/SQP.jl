@@ -15,3 +15,5 @@ compute_derivative(∇fp::T, μ::Tv, cons_viol::Tv) where {T, Tv<:AbstractArray{
 compute_derivative(∇fp::T, μ::T, cons_viol::Tv) where {T, Tv<:AbstractArray{T}} = ∇fp - μ * sum(cons_viol)
 compute_derivative(∇f::Tv, p::Tv, μ::T, cons_viol::Tv) where {T, Tv<:AbstractArray{T}} = ∇f' * p - μ * sum(cons_viol)
 compute_derivative(∇f::Tv, p::Tv, μ::Tv, cons_viol::Tv) where {T, Tv<:AbstractArray{T}} = ∇f' * p - μ' * cons_viol
+
+#? is this different version of merit? 

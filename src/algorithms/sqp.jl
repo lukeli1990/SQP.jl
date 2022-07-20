@@ -19,6 +19,7 @@ end
     x::TD # primal solution
     p::TD # search direction
     p_soc::TD # direction after SOC
+    p_slack::Dict{Int,Vector{Float64}} #! added direction on slack 
     lambda::TD # Lagrangian dual multiplier
     mult_x_L::TD # reduced cost for lower bound
     mult_x_U::TD # reduced cost for upper bound
@@ -60,7 +61,7 @@ end
 """
     QpData
 
-Create QP subproblem data
+Create QP subproblem data from SQP struct 
 """
 function QpData(sqp::AbstractSqpOptimizer)
 	return QpData(

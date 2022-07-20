@@ -11,13 +11,17 @@ import MathOptInterface
 const MOI = MathOptInterface
 const MOIU = MathOptInterface.Utilities
 
-include("status.jl")
-include("parameters.jl")
-include("model.jl")
+#? Function type in model.jl
 
-include("algorithms.jl")
-include("utils.jl")
+#? T, Tv vector, Tm matrix, TD vector
 
-include("MOI_wrapper.jl")
+include("status.jl") #Dict for output flag 
+include("parameters.jl") #type/struct param set and get field 
+include("model.jl") #struct model, optimize!(), add_statistic() 
+
+include("algorithms.jl") #Algorithms 
+include("utils.jl") #dropzeros, print_vector, print_matrix 
+
+include("MOI_wrapper.jl") #? what are these 
 
 end # module

@@ -6,7 +6,7 @@ mutable struct QpModel{T,Tv<:AbstractArray{T},Tm<:AbstractMatrix{T}} <: Abstract
     constr_v_ub::Vector{MOI.ConstraintIndex}
     constr_v_lb::Vector{MOI.ConstraintIndex}
     constr::Vector{MOI.ConstraintIndex}
-    slack_vars::Dict{Int,Vector{MOI.VariableIndex}}
+    slack_vars::Dict{Int,Vector{MOI.VariableIndex}} #slack variable for each constraint 
     constr_slack::Vector{MOI.ConstraintIndex}
 
     function QpModel(
