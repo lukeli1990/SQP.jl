@@ -94,7 +94,7 @@ end
 """
     run!
 
-Run the line-search SQP algorithm
+Run the trust-region SQP algorithm
 """
 function run!(sqp::AbstractSqpTrOptimizer)
 
