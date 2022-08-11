@@ -116,11 +116,17 @@ function run!(sqp::AbstractSqpTrOptimizer)
         sub_optimize_lp!(sqp)
 
         print(sqp, "LP")
+
+        lpviol = violation_of_linear_constraints(sqp, sqp.x) #new 
+        @info "Solve Linear Feasibility with error..." lpviol #new
     else
         @info "Initial point feasible to linear constraints..." lpviol
     end
 
-    while true
+    # return sqp #for debug new 
+
+    # while true
+    while true #sqp.iter == 1  #for debug new
 
         # Iteration counter limit
         if terminate_by_iterlimit(sqp)
@@ -137,8 +143,11 @@ function run!(sqp::AbstractSqpTrOptimizer)
             sqp.compl = norm_complementarity(sqp)
         end
 
+        # return sqp #for debug new 
+
         # solve QP subproblem
         QP_time = @elapsed compute_step!(sqp)
+        # return sqp #for debug new 
         add_statistics(sqp.problem, "QP_time", QP_time)
 
         if sqp.sub_status ∈ [MOI.OPTIMAL, MOI.ALMOST_OPTIMAL, MOI.ALMOST_LOCALLY_SOLVED, MOI.LOCALLY_SOLVED]
@@ -147,6 +156,7 @@ function run!(sqp::AbstractSqpTrOptimizer)
             if sqp.feasibility_restoration == true #running feasibility restoration but infeasible 
                 @info "Failed to find a feasible direction"
                 if sqp.prim_infeas <= sqp.options.tol_infeas
+                    @info "ret change" #for debug 
                     sqp.ret = 6 #output a feasible point
                 else
                     sqp.ret = 2 #local infeasibility detected 
@@ -162,8 +172,9 @@ function run!(sqp::AbstractSqpTrOptimizer)
                 continue
             end
         else
-            sqp.ret == -3 #error in computation 
+            sqp.ret = -3 #error in computation #fix typo 
             if sqp.prim_infeas <= sqp.options.tol_infeas
+                @info "ret change" #for debug 
                 sqp.ret = 6 #error but still we found a feasible point 
             end
             break
@@ -171,6 +182,7 @@ function run!(sqp::AbstractSqpTrOptimizer)
 
         if sqp.step_acceptance #if step was accepted in last iter 
             sqp.phi = compute_phi(sqp, sqp.x, 0.0, sqp.p)
+            # return sqp #for debug new 
         end
 
         print(sqp)
@@ -201,7 +213,7 @@ function run!(sqp::AbstractSqpTrOptimizer)
         end
 
         do_step!(sqp) #accept, reject step, adjust trust region, second order correction. 
-
+        # return sqp #for debug new 
         # NOTE: This is based on the algorithm of filterSQP.
         if sqp.feasibility_restoration && sqp.step_acceptance #running feasibility restoration but accept step 
             sqp.feasibility_restoration = false
@@ -511,25 +523,26 @@ function do_step!(sqp::AbstractSqpTrOptimizer)
 
     ϕ_k = compute_phi(sqp, sqp.x, 1.0, sqp.p)
     ared = sqp.phi - ϕ_k
-    # @show sqp.phi, ϕ_k
+    @show sqp.phi, ϕ_k #for debug new
 
     pred = 1.0
     if !sqp.feasibility_restoration
         q_0 = compute_qmodel(sqp, false)
         q_k = compute_qmodel(sqp, true)
         pred = q_0 - q_k
-        # @show q_0, q_k
+        @show q_0, q_k #for debug new 
     end
 
     ρ = ared / pred
-    if ared > 0 && ρ > 0
+    if ared > 0 && ρ > 0 #accept add p_lambda, p to lambda, x 
         sqp.x .+= sqp.p
         sqp.lambda .+= sqp.p_lambda
         sqp.mult_x_L .+= sqp.p_mult_x_L
         sqp.mult_x_U .+= sqp.p_mult_x_U
         if sqp.Δ == norm(sqp.p, Inf)
-            sqp.Δ = min(2 * sqp.Δ, sqp.Δ_max)
+            sqp.Δ = min(2 * sqp.Δ, sqp.Δ_max)     
         end
+        @info "accepted: new trust region = " sqp.Δ #for debug
         sqp.step_acceptance = true
     else
         sqp.tmpx .= sqp.x .+ sqp.p
@@ -567,8 +580,9 @@ function do_step!(sqp::AbstractSqpTrOptimizer)
         end
 
         if !perform_soc
-            sqp.Δ = 0.5 * min(sqp.Δ, norm(sqp.p, Inf))
+            sqp.Δ = 0.5 * min(sqp.Δ, norm(sqp.p, Inf))  
             sqp.step_acceptance = false
+            @info "rejected: new trust region = " sqp.Δ #for debug
         end
     end
 end
