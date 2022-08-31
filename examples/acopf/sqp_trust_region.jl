@@ -109,8 +109,6 @@ function run!(sqp::AbstractSqpTrOptimizer)
 
     print_header(sqp)
 
-    # @show sqp.x #?bowen
-
     # Find the initial point feasible to linear and bound constraints
     lpviol = violation_of_linear_constraints(sqp, sqp.x)
     if lpviol > sqp.options.tol_infeas
@@ -124,8 +122,6 @@ function run!(sqp::AbstractSqpTrOptimizer)
     else
         @info "Initial point feasible to linear constraints..." lpviol
     end
-
-    # @show sqp.x #?bowen
 
     # return sqp #for debug new 
 
@@ -233,7 +229,6 @@ function run!(sqp::AbstractSqpTrOptimizer)
     sqp.problem.mult_x_U .= sqp.mult_x_U
     sqp.problem.mult_x_L .= sqp.mult_x_L
     add_statistic(sqp.problem, "iter", sqp.iter)
-    # @show sqp.x #?bowen 
 end
 
 """
